@@ -76,7 +76,7 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
 }
 
 
-template <bool field>
+template <bool interlaced>
 static void smoothN_SSE2(int N,
                          const uint8_t* origsrc, uint8_t* origdst,
                          int stride, int w, int h,
@@ -96,7 +96,7 @@ static void smoothN_SSE2(int N,
 
     int h2 = h;
 
-    if (field) {
+    if (interlaced) {
         stride *= 2;
         h2 >>= 1;
     }
@@ -107,7 +107,7 @@ static void smoothN_SSE2(int N,
         int yn = (y < h2 - Nover2) ? y0 + Nover2 + 1
                                    : y0 + (h2 - y);
 
-        if (field)
+        if (interlaced)
             yn--;
 
         int offset = y0 * stride;
@@ -125,7 +125,7 @@ static void smoothN_SSE2(int N,
                             thres,
                             count, divres, divin);
 
-            if (field) {
+            if (interlaced) {
                 sum_pixels_SSE2(srcp2 + x, dstp2 + x,
                                 stride,
                                 offset + x0,
@@ -141,10 +141,8 @@ static void smoothN_SSE2(int N,
         srcp2 += stride;
     }
 
-    if (field && h % 1) {
-        int y0, yn;
-
-        y0 = yn = Nover2; // We don't need to do that
+    if (interlaced && h % 1) {
+        int yn = Nover2;
 
         int offset = Nover2 * stride;
 
