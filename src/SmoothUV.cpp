@@ -115,13 +115,13 @@ static void smoothN_SSE2(int N,
         for (int x = 0; x < w; x += 4) {
             int x0 = (x < Nover2) ? x : Nover2;
 
-            int width = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
-                                                 : x0 + w - x - 3;
+            int xn = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
+                                              : x0 + w - x - 3;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
                             stride,
                             offset + x0,
-                            width, yn,
+                            xn, yn,
                             thres,
                             count, divres, divin);
 
@@ -129,7 +129,7 @@ static void smoothN_SSE2(int N,
                 sum_pixels_SSE2(srcp2 + x, dstp2 + x,
                                 stride,
                                 offset + x0,
-                                width, yn,
+                                xn, yn,
                                 thres,
                                 count, divres, divin);
             }
@@ -149,13 +149,13 @@ static void smoothN_SSE2(int N,
         for (int x = 0; x < w; x += 4) {
             int x0 = (x < Nover2) ? x : Nover2;
 
-            int width = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
-                                                 : x0 + w - x - 3;
+            int xn = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
+                                              : x0 + w - x - 3;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
                             stride,
                             offset + x0,
-                            width, yn,
+                            xn, yn,
                             thres,
                             count, divres, divin);
         }
