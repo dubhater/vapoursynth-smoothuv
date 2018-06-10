@@ -32,14 +32,14 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
     __m128i sum = zeroes;
     __m128i count = zeroes;
 
-    __m128i mm0 = _mm_unpacklo_epi8(_mm_cvtsi32_si128(*(const int *)srcp),
+    __m128i mm0 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)srcp),
                                     zeroes);
 
     srcp = srcp - diff;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x <= width; x++) {
-            __m128i mm1 = _mm_unpacklo_epi8(_mm_cvtsi32_si128(*(const int *)(srcp + x)),
+            __m128i mm1 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)(srcp + x)),
                                             zeroes);
 
             __m128i abs_diff = _mm_or_si128(_mm_subs_epu16(mm0, mm1),
@@ -60,19 +60,19 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
         srcp += stride;
     }
 
-    _mm_storel_epi64((__m128i *)countp, count);
+    _mm_store_si128((__m128i *)countp, count);
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 8; i++)
         divresp[i] = divinp[countp[i]];
 
     // Address the signed multiply limitation
-    __m128i mm5 = _mm_loadl_epi64((const __m128i *)divresp);
+    __m128i mm5 = _mm_load_si128((const __m128i *)divresp);
     sum = _mm_slli_epi16(sum, 1);
 
     // Now multiply (divres/65536)
     sum = _mm_mulhi_epi16(sum, mm5);
     sum = _mm_packus_epi16(sum, mm5);
-    *(int *)dstp = _mm_cvtsi128_si32(sum);
+    _mm_storel_epi64((__m128i *)dstp, sum);
 }
 
 
@@ -87,7 +87,7 @@ static void smoothN_SSE2(int N,
     uint8_t *dstp = origdst;
     uint8_t *dstp2 = origdst + stride;
 
-    uint16_t count[4], divres[4];
+    alignas(16) uint16_t count[8], divres[8];
 
     const int Nover2 = N >> 1;
     const int SqrtTsquared = (int)floor(sqrt((threshold * threshold) / 3));
@@ -112,11 +112,11 @@ static void smoothN_SSE2(int N,
 
         int offset = y0 * stride;
 
-        for (int x = 0; x < w; x += 4) {
+        for (int x = 0; x < w; x += 8) {
             int x0 = (x < Nover2) ? x : Nover2;
 
-            int xn = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
-                                              : x0 + w - x - 3;
+            int xn = (x + 7 + Nover2 < w - 1) ? x0 + Nover2 + 1
+                                              : x0 + w - x - 7;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
                             stride,
@@ -146,11 +146,11 @@ static void smoothN_SSE2(int N,
 
         int offset = Nover2 * stride;
 
-        for (int x = 0; x < w; x += 4) {
+        for (int x = 0; x < w; x += 8) {
             int x0 = (x < Nover2) ? x : Nover2;
 
-            int xn = (x + 3 + Nover2 < w - 1) ? x0 + Nover2 + 1
-                                              : x0 + w - x - 3;
+            int xn = (x + 7 + Nover2 < w - 1) ? x0 + Nover2 + 1
+                                              : x0 + w - x - 7;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
                             stride,
