@@ -12,7 +12,8 @@ plugin. The Avisynth plugin also includes the SSHiQ filter, which was
 not ported.
 
 
-RainbowSmooth is a script which adds edge detection to SmoothUV.
+RainbowSmooth is a script which adds edge detection to SmoothUV. It is
+a port of the Avisynth function rainbow_smooth().
 
 
 Usage
@@ -53,7 +54,7 @@ Parameters:
 
 ::
 
-    RainbowSmooth(clip, radius=3, lthresh=0, hthresh=220)
+    RainbowSmooth(clip, radius=3, lthresh=0, hthresh=220, mask="original")
 
 
 Parameters:
@@ -75,6 +76,17 @@ Parameters:
 
         Default: lthresh=0, hthresh=220.
 
+    *mask*
+        Edge mask to use. It can be either a clip, or one of the
+        following strings: "original", "prewitt", "sobel", "tcanny",
+        "fast_sobel", "kirsch", "retinex_edgemask".
+
+        "original" is the edge mask used by the original
+        rainbow_smooth() Avisynth function.
+
+        The latter three require kagefunc.py.
+
+        Default: "original".
 
 Compilation
 ===========
