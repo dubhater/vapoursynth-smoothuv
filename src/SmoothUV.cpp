@@ -227,7 +227,7 @@ static void VS_CC smoothUVFree(void *instanceData, VSCore *core, const VSAPI *vs
 
     vsapi->freeNode(d->clip);
 
-    delete d;
+    free(d);
 }
 
 
@@ -278,7 +278,8 @@ static void VS_CC smoothUVCreate(const VSMap *in, VSMap *out, void *userData, VS
         d.divin[i] = (uint16_t)std::min((int)(65536.0 / i + 0.5), 65535);
 
 
-    SmoothUVData *data = new SmoothUVData(d);
+    SmoothUVData *data = (SmoothUVData *)malloc(sizeof(SmoothUVData));
+    *data = d;
 
     vsapi->createFilter(in, out, "SmoothUV", smoothUVInit, smoothUVGetFrame, smoothUVFree, fmParallel, 0, data, core);
 }
