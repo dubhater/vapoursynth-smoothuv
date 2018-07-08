@@ -65,12 +65,10 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
     for (int i = 0; i < 8; i++)
         divresp[i] = divinp[countp[i]];
 
-    // Address the signed multiply limitation
     __m128i mm5 = _mm_load_si128((const __m128i *)divresp);
-    sum = _mm_slli_epi16(sum, 1);
 
     // Now multiply (divres/65536)
-    sum = _mm_mulhi_epi16(sum, mm5);
+    sum = _mm_mulhi_epu16(sum, mm5);
     sum = _mm_packus_epi16(sum, mm5);
     _mm_storel_epi64((__m128i *)dstp, sum);
 }
@@ -276,9 +274,8 @@ static void VS_CC smoothUVCreate(const VSMap *in, VSMap *out, void *userData, VS
     }
 
 
-    d.divin[0] = 32767;
-    for (int i = 1; i < 15 * 15; i++)
-        d.divin[i] = (uint16_t)floor(32767.0 / i + 0.5);
+    for (int i = 1; i < 256; i++)
+        d.divin[i] = (uint16_t)(65535.0 / i + 0.5);
 
     d.radius = d.radius * 2 + 1;
 
