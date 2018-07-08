@@ -247,8 +247,8 @@ static void VS_CC smoothUVCreate(const VSMap *in, VSMap *out, void *userData, VS
     d.interlaced_exists = !err;
 
 
-    if (d.radius < 1 || d.radius > 5) {
-        vsapi->setError(out, "SmoothUV: radius must be between 1 and 5 (inclusive).");
+    if (d.radius < 1 || d.radius > 7) {
+        vsapi->setError(out, "SmoothUV: radius must be between 1 and 7 (inclusive).");
         return;
     }
 

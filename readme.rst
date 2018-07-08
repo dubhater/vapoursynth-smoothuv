@@ -29,7 +29,7 @@ Parameters:
         8 bit YUV.
 
     *radius*
-        Radius. Must be between 1 and 5.
+        Radius. Must be between 1 and 7.
 
         Larger values smooth more.
 
@@ -38,7 +38,7 @@ Parameters:
     *threshold*
         Threshold. Must be between 0 and 450.
 
-        Larger values smooth more?
+        Larger values smooth more.
 
         Default: 270.
 
