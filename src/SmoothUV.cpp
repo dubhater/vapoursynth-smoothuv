@@ -32,25 +32,25 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
     __m128i sum = zeroes;
     __m128i count = zeroes;
 
-    __m128i mm0 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)srcp),
-                                    zeroes);
+    __m128i center_pixel = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)srcp),
+                                             zeroes);
 
     srcp = srcp - diff;
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x <= width; x++) {
-            __m128i mm1 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)(srcp + x)),
-                                            zeroes);
+            __m128i neighbour_pixel = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)(srcp + x)),
+                                                        zeroes);
 
-            __m128i abs_diff = _mm_or_si128(_mm_subs_epu16(mm0, mm1),
-                                            _mm_subs_epu16(mm1, mm0));
+            __m128i abs_diff = _mm_or_si128(_mm_subs_epu16(center_pixel, neighbour_pixel),
+                                            _mm_subs_epu16(neighbour_pixel, center_pixel));
 
              // Absolute difference less than thres
             __m128i mask = _mm_cmpgt_epi16(thres, abs_diff);
 
             // Sum up the pixels that meet the criteria
             sum = _mm_adds_epu16(sum,
-                                 _mm_and_si128(mm1, mask));
+                                 _mm_and_si128(neighbour_pixel, mask));
 
             // Keep track of how many pixels are in the sum
             count = _mm_adds_epu16(count,
@@ -75,7 +75,7 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
 
 
 template <bool interlaced>
-static void smoothN_SSE2(int N,
+static void smoothN_SSE2(int radius,
                          const uint8_t* origsrc, uint8_t* origdst,
                          int stride, int w, int h,
                          const int threshold,
@@ -87,8 +87,7 @@ static void smoothN_SSE2(int N,
 
     alignas(16) uint16_t count[8], divres[8];
 
-    const int Nover2 = N >> 1;
-    const int SqrtTsquared = (int)floor(sqrt((threshold * threshold) / 3));
+    const int SqrtTsquared = (int)sqrt((threshold * threshold) / 3);
 
     const __m128i thres = _mm_set1_epi16(SqrtTsquared);
 
@@ -100,9 +99,9 @@ static void smoothN_SSE2(int N,
     }
 
     for (int y = 0; y < h2; y++) {
-        int y0 = (y < Nover2) ? y : Nover2;
+        int y0 = (y < radius) ? y : radius;
 
-        int yn = (y < h2 - Nover2) ? y0 + Nover2 + 1
+        int yn = (y < h2 - radius) ? y0 + radius + 1
                                    : y0 + (h2 - y);
 
         if (interlaced)
@@ -111,9 +110,9 @@ static void smoothN_SSE2(int N,
         int offset = y0 * stride;
 
         for (int x = 0; x < w; x += 8) {
-            int x0 = (x < Nover2) ? x : Nover2;
+            int x0 = (x < radius) ? x : radius;
 
-            int xn = (x + 7 + Nover2 < w - 1) ? x0 + Nover2 + 1
+            int xn = (x + 7 + radius < w - 1) ? x0 + radius + 1
                                               : x0 + w - x - 7;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
@@ -140,14 +139,14 @@ static void smoothN_SSE2(int N,
     }
 
     if (interlaced && h % 1) {
-        int yn = Nover2;
+        int yn = radius;
 
-        int offset = Nover2 * stride;
+        int offset = radius * stride;
 
         for (int x = 0; x < w; x += 8) {
-            int x0 = (x < Nover2) ? x : Nover2;
+            int x0 = (x < radius) ? x : radius;
 
-            int xn = (x + 7 + Nover2 < w - 1) ? x0 + Nover2 + 1
+            int xn = (x + 7 + radius < w - 1) ? x0 + radius + 1
                                               : x0 + w - x - 7;
 
             sum_pixels_SSE2(srcp + x, dstp + x,
@@ -276,8 +275,6 @@ static void VS_CC smoothUVCreate(const VSMap *in, VSMap *out, void *userData, VS
 
     for (int i = 1; i < 256; i++)
         d.divin[i] = (uint16_t)(65535.0 / i + 0.5);
-
-    d.radius = d.radius * 2 + 1;
 
 
     SmoothUVData *data = new SmoothUVData(d);
