@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -58,6 +59,9 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
 
         srcp += stride;
     }
+
+    sum = _mm_adds_epu16(sum,
+                         _mm_srli_epi16(count, 1));
 
     __m128i divres = zeroes;
 
@@ -271,7 +275,7 @@ static void VS_CC smoothUVCreate(const VSMap *in, VSMap *out, void *userData, VS
 
 
     for (int i = 1; i < 256; i++)
-        d.divin[i] = (uint16_t)(65535.0 / i + 0.5);
+        d.divin[i] = (uint16_t)std::min((int)(65536.0 / i + 0.5), 65535);
 
 
     SmoothUVData *data = new SmoothUVData(d);
