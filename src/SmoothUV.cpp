@@ -25,7 +25,7 @@ typedef struct SmoothUVData {
 static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int stride,
                     const int diff, const int width, const int height,
                     const __m128i &thres,
-                    uint16_t *countp, uint16_t *divresp, const uint16_t *divinp) {
+                    const uint16_t *divinp) {
 
     __m128i zeroes = _mm_setzero_si128();
 
@@ -53,23 +53,22 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
                                  _mm_and_si128(neighbour_pixel, mask));
 
             // Keep track of how many pixels are in the sum
-            count = _mm_adds_epu16(count,
-                                   _mm_and_si128(mask, _mm_set1_epi16(1)));
+            count = _mm_sub_epi16(count, mask);
         }
 
         srcp += stride;
     }
 
-    _mm_store_si128((__m128i *)countp, count);
+    __m128i divres = zeroes;
 
-    for (int i = 0; i < 8; i++)
-        divresp[i] = divinp[countp[i]];
-
-    __m128i mm5 = _mm_load_si128((const __m128i *)divresp);
+    for (int i = 0; i < 8; i++) {
+        int e = _mm_extract_epi16(count, i);
+        divres = _mm_insert_epi16(divres, divinp[e], i);
+    }
 
     // Now multiply (divres/65536)
-    sum = _mm_mulhi_epu16(sum, mm5);
-    sum = _mm_packus_epi16(sum, mm5);
+    sum = _mm_mulhi_epu16(sum, divres);
+    sum = _mm_packus_epi16(sum, sum);
     _mm_storel_epi64((__m128i *)dstp, sum);
 }
 
@@ -84,8 +83,6 @@ static void smoothN_SSE2(int radius,
     const uint8_t *srcp2 = origsrc + stride;
     uint8_t *dstp = origdst;
     uint8_t *dstp2 = origdst + stride;
-
-    alignas(16) uint16_t count[8], divres[8];
 
     const int SqrtTsquared = (int)sqrt((threshold * threshold) / 3);
 
@@ -120,7 +117,7 @@ static void smoothN_SSE2(int radius,
                             offset + x0,
                             xn, yn,
                             thres,
-                            count, divres, divin);
+                            divin);
 
             if (interlaced) {
                 sum_pixels_SSE2(srcp2 + x, dstp2 + x,
@@ -128,7 +125,7 @@ static void smoothN_SSE2(int radius,
                                 offset + x0,
                                 xn, yn,
                                 thres,
-                                count, divres, divin);
+                                divin);
             }
         }
 
@@ -154,7 +151,7 @@ static void smoothN_SSE2(int radius,
                             offset + x0,
                             xn, yn,
                             thres,
-                            count, divres, divin);
+                            divin);
         }
     }
 }
