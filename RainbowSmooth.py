@@ -2,7 +2,7 @@ import vapoursynth as vs
 
 
 def RainbowSmooth(clip, radius=3, lthresh=0, hthresh=220, mask="original"):
-    core = vs.get_core()
+    core = vs.core
     
     if isinstance(mask, str):
         if mask == "original":
