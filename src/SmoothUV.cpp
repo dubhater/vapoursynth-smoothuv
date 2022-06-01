@@ -39,7 +39,7 @@ static inline void sum_pixels_SSE2(const uint8_t *srcp, uint8_t *dstp, const int
     srcp = srcp - diff;
 
     for (int y = 0; y < height; y++) {
-        for (int x = 0; x <= width; x++) {
+        for (int x = 0; x < width; x++) {
             __m128i neighbour_pixel = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *)(srcp + x)),
                                                         zeroes);
 
